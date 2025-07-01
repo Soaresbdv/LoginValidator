@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Login com 2FA</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3"></script>
+</head>
+
+<body>
+    <div id="app">
+        <login-form v-if="!show2fa" @login="handleLogin"></login-form>
+        <two-fa-form v-else @verify="handle2FA" @cancel="show2fa = false"></two-fa-form>
+    </div>
+
+    <script type="module">
+        import LoginForm from '/components/LoginForm.vue'
+        import TwoFAForm from '/components/TwoFAForm.vue'
+
+        const app = Vue.createApp({
+            data() {
+                return {
+                    show2fa: false,
+                    currentUser: null
+                }
+            },
+            methods: {
+                handleLogin(user) {
+                    fetch('/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(user)
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.requires_2fa) {
+                                this.currentUser = user.username
+                                this.show2fa = true
+                            } else {
+                                alert('Login bem-sucedido!')
+                            }
+                        })
+                },
+                handle2FA(code) {
+                    fetch('/verify-2fa', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username: this.currentUser,
+                            code: code
+                        })
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('Autenticação completa!')
+                            } else {
+                                alert('Código inválido')
+                            }
+                        })
+                }
+            },
+            components: { LoginForm, TwoFAForm }
+        })
+
+        app.mount('#app')
+    </script>
+</body>
+
+</html>
