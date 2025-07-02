@@ -9,7 +9,14 @@ from auth import (
     verify_user,
     verify_2fa,
     get_authenticated_user,
-    update_user_2fa
+    update_user_2fa,
+    send_verification_email,
+    store_2fa_code,
+    get_user_by_email,
+    user_exists,
+    generate_verification_code,
+    create_user,
+    verify_user_code
 )
 
 app = Flask(__name__)
@@ -23,8 +30,26 @@ app.config['SECRET_KEY'] = '993969'
 def home():
     return "Servidor Flask funcionando! Acesse /login via POST"
 
-# Rotas
-@app.route('/login', methods=['POST'])
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    if not data or not data.get('email') or not data.get('password'):
+        return jsonify({'error': 'Dados inválidos'}), 400
+
+    if user_exists(data['email']):
+        return jsonify({'error': 'Email já registrado'}), 400
+
+    verification_code = generate_verification_code()
+    create_user(
+        email=data['email'],
+        password=data['password'],
+        verification_code=verification_code
+    )
+    
+    send_verification_email(data['email'], verification_code)
+    return jsonify({'success': True})
+
+
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -107,6 +132,26 @@ def enable_2fa():
         'otpauth_url': otpauth_url
     })
 
+@app.route('/verify-email', methods=['POST'])
+def verify_email():
+    data = request.get_json()
+    if verify_user_code(data['email'], data['code']):
+        return jsonify({'success': True})
+    return jsonify({'error': 'Código inválido'}), 400
+
+@app.route('/send-2fa-email', methods=['POST'])
+def send_2fa_email():
+    data = request.get_json()
+    user = get_user_by_email(data['email'])
+    
+    if user and user['twofa_enabled']:
+        code = generate_verification_code()
+        store_2fa_code(user['id'], code)
+        send_verification_email(user['email'], code)
+        return jsonify({'success': True})
+    
+    return jsonify({'error': 'Falha ao enviar código'}), 400
+
 if __name__ == '__main__':
-    setup_auth()  # Configura usuários iniciais
+    setup_auth()
     app.run(debug=True, port=5000)
