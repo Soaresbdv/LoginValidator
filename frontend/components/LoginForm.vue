@@ -39,3 +39,17 @@ export default {
   }
 }
 </script>
+
+<script setup>
+import { store } from '../assets/js/store'
+
+const handleLogin = async () => {
+    const res = await fetch('/login', { /* ... */ })
+    if (res.requires_2fa) {
+        // ... fluxo existente
+    } else {
+        store.setAuthData(data.user, data.token)
+        router.push('/dashboard')  // Adicione Vue Router
+    }
+}
+</script>

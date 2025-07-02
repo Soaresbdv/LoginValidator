@@ -1,0 +1,23 @@
+./
+    project_tree.txt
+    README.md
+    tree.py
+    backend/
+        app.py
+        auth.py
+        database.py
+        jwt_utils.py
+        requirements.txt
+    frontend/
+        index.html
+        assets/
+            css/
+                styles.css
+            js/
+                app.js
+                auth.js
+                store.js
+        components/
+            Dashboard.vue
+            LoginForm.vue
+            TwoFAForm.vue
